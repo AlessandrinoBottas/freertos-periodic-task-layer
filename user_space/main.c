@@ -8,20 +8,20 @@
 
 #define T_PRIO PTL_MIN_PRIORITY + 1
 
-void vFibonacciTask(void *pvParameters);
+void vBusyDelayTask(void *pvParameters);
 
-/* Carichi di lavoro (n-esimo numero di Fibonacci da calcolare) */
-static uint32_t ulPayloadLight   = 10000;
-static uint32_t ulPayloadMedium  = 30000;
-static uint32_t ulPayloadHeavy   = 60000;
-static uint32_t ulPayloadExtreme = 100000;
+/* Carichi di lavoro (durata dell'esecuzione in millisecondi) */
+static uint32_t ulPayloadLight   = 5;   // 5 ms
+static uint32_t ulPayloadMedium  = 15;  // 15 ms
+static uint32_t ulPayloadHeavy   = 40;  // 40 ms
+static uint32_t ulPayloadExtreme = 80;  // 80 ms
 
 static TaskConfig_t xUserTasksConfig[] = {
     {
         .pcName = "T_Light",
         .uxStackDepth = 256,
         .uxPriority = T_PRIO + 3,
-        .pvTaskCode = vFibonacciTask,
+        .pvTaskCode = vBusyDelayTask,
         .pvParameters = (void*)&ulPayloadLight,
         .xPeriod = 20,
         .xDeadline = 20,
@@ -33,7 +33,7 @@ static TaskConfig_t xUserTasksConfig[] = {
         .pcName = "T_Medium",
         .uxStackDepth = 256,
         .uxPriority = T_PRIO + 2,
-        .pvTaskCode = vFibonacciTask,
+        .pvTaskCode = vBusyDelayTask,
         .pvParameters = (void*)&ulPayloadMedium,
         .xPeriod = 50,
         .xDeadline = 50,
@@ -45,7 +45,7 @@ static TaskConfig_t xUserTasksConfig[] = {
         .pcName = "T_Heavy",
         .uxStackDepth = 256,
         .uxPriority = T_PRIO + 1,
-        .pvTaskCode = vFibonacciTask,
+        .pvTaskCode = vBusyDelayTask,
         .pvParameters = (void*)&ulPayloadHeavy,
         .xPeriod = 100,
         .xDeadline = 100,
@@ -57,7 +57,7 @@ static TaskConfig_t xUserTasksConfig[] = {
         .pcName = "T_Extreme",
         .uxStackDepth = 256,
         .uxPriority = T_PRIO,
-        .pvTaskCode = vFibonacciTask,
+        .pvTaskCode = vBusyDelayTask,
         .pvParameters = (void*)&ulPayloadExtreme,
         .xPeriod = 200,
         .xDeadline = 200,
@@ -87,19 +87,15 @@ int main(int argc, char **argv){
 }
 
 /* 
- * Real workload that consumes CPU calculating the n-th Fibonacci number.
- * Using volatile to prevent compiler optimizations from skipping the loop.
+ * Simulazione reale di carico sulla CPU.
+ * Sostituisce i calcoli pesanti con un busy-wait basato sui tick,
+ * consumando cicli macchina in modo misurabile e prevedibile.
  */
-void vFibonacciTask(void *pvParameters) {
-    uint32_t n = *(uint32_t*)pvParameters;
+void vBusyDelayTask(void *pvParameters) {
+    uint32_t duration_ms = *(uint32_t*)pvParameters;
+    TickType_t xStart = xTaskGetTickCount();
     
-    volatile uint32_t a = 0;
-    volatile uint32_t b = 1;
-    volatile uint32_t c = 0;
-    
-    for (uint32_t i = 2; i <= n; i++) {
-        c = a + b;
-        a = b;
-        b = c;
+    while ((xTaskGetTickCount() - xStart) < pdMS_TO_TICKS(duration_ms)) {
+        __asm volatile ("nop");
     }
 }
