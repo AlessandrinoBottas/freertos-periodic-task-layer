@@ -24,7 +24,7 @@
  # https://github.com/FreeRTOS
  
 # The directory that contains FreeRTOS source code
-FREERTOS_ROOT := ../FreeRTOS/FreeRTOS
+FREERTOS_ROOT := ./FreeRTOS/FreeRTOS
 
 # FreeRTOS kernel
 KERNEL_DIR := $(FREERTOS_ROOT)/Source
