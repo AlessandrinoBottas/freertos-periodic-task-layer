@@ -1,0 +1,26 @@
+# --- Build Artifacts ---
+build/
+Output/
+*.o
+*.d
+*.elf
+*.out
+*.i
+*.map
+*.s
+
+# --- Mac OS System Files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# --- IDE & Tooling ---
+.vscode/
+.obsidian/
+.cache/
+.clangd/
+compile_commands.json

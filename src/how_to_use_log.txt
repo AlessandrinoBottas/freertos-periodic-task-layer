@@ -1,0 +1,54 @@
+================================================================================
+          TRACE AND MONITORING SYSTEM - FREERTOS PROJECT 2026
+================================================================================
+
+1. INITIALIZATION
+-----------------
+Before starting the FreeRTOS scheduler, it is mandatory to call:
+
+    vTraceInit(); 
+
+This function allocates the internal `xTraceQueue` with a size of TRACE_BUFFER_SIZE. 
+
+
+2. STARTING THE CONSUMER
+------------------------
+The printing task must be created in `main.c` with priority IDLE + 1:
+
+    xTaskCreate(vTracePrinterTask, "TraceTask", 512, NULL, tskIDLE_PRIORITY + 1, NULL);
+
+Note: The logger does not interfere with HRT (Hard Real-Time) tasks because 
+it only executes when the CPU is free or SRT tasks are waiting.
+
+3. USAGE (PRODUCER)
+-------------------
+To record an event from any part of the code (except ISRs), use:
+
+    vRecordTraceEvent(xTimestamp, eType, ulTaskIdentifier, usExtraData);
+
+PARAMETERS:
+  - xTimestamp:       The current tick (usually xTaskGetTickCount()).
+  - eType:            Event type (e.g., eTraceTaskStart, eTraceDeadlineMiss).
+  - ulTaskIdentifier: Numeric ID of the task (required for analysis).
+  - usExtraData:      Additional data (e.g., duration in ms or subframe ID).
+
+Example:
+    vRecordTraceEvent(xTaskGetTickCount(), eTraceTaskStart, 1, 0);
+
+4. SUPPORTED EVENT TYPES
+------------------------
+Defined in `eTraceEventType_t`:
+  - eTraceTaskStart, eTraceTaskEnd
+  - eTraceDeadlineMiss
+  - eTraceOverrunKill, eTraceOverrunSkip, eTraceOverrunCatchUp
+
+
+5. NON-FUNCTIONAL REQUIREMENTS
+------------------------------
+To comply with the project constraints:
+  - Do not call vUART_PutString directly from application tasks.
+  - Use only vRecordTraceEvent to ensure overhead ≤ 10%.
+  - If the queue is full, the event is discarded to avoid blocking HRT tasks. 
+    (Ensures release jitter ≤ 1 tick).
+
+================================================================================
