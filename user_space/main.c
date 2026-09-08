@@ -6,117 +6,63 @@
 #include <stdint.h>
 #include "logger.h"
 
-
-#define LOOPS_PER_MS 1213UL
-#define WORKLOAD_1MS (LOOPS_PER_MS - 50)  //giving some rest not fully occuping the CPU
-#define PERIOD 11
-
 #define T_PRIO PTL_MIN_PRIORITY + 1
-#define P_PRIO PTL_MIN_PRIORITY + 2
 
+void vFibonacciTask(void *pvParameters);
 
-void vDummyTask(void *pvParameters);
-void vOverheadProbeTask(void *pvParameters);
-static uint32_t ulIgnoredWorkload 		= 0 * WORKLOAD_1MS;
-static uint32_t ulWorkload 				= 3 * WORKLOAD_1MS;
-static uint32_t ulOverruningWorkload 	= 7 * WORKLOAD_1MS;
-
+/* Carichi di lavoro (n-esimo numero di Fibonacci da calcolare) */
+static uint32_t ulPayloadLight   = 10000;
+static uint32_t ulPayloadMedium  = 30000;
+static uint32_t ulPayloadHeavy   = 60000;
+static uint32_t ulPayloadExtreme = 100000;
 
 static TaskConfig_t xUserTasksConfig[] = {
     {
-        .pcName = "T1",
+        .pcName = "T_Light",
         .uxStackDepth = 256,
-        .uxPriority = T_PRIO,
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulWorkload,
-        .xPeriod = PERIOD,
-        .xDeadline = PERIOD,
+        .uxPriority = T_PRIO + 3,
+        .pvTaskCode = vFibonacciTask,
+        .pvParameters = (void*)&ulPayloadLight,
+        .xPeriod = 20,
+        .xDeadline = 20,
         .xPhase = 0,
         .ePolicy = KILL,
-		.cIsPeriodic = 1
+        .cIsPeriodic = 1
     },
-	{
-        .pcName = "T2",
+    {
+        .pcName = "T_Medium",
+        .uxStackDepth = 256,
+        .uxPriority = T_PRIO + 2,
+        .pvTaskCode = vFibonacciTask,
+        .pvParameters = (void*)&ulPayloadMedium,
+        .xPeriod = 50,
+        .xDeadline = 50,
+        .xPhase = 0,
+        .ePolicy = KILL,
+        .cIsPeriodic = 1
+    },
+    {
+        .pcName = "T_Heavy",
         .uxStackDepth = 256,
         .uxPriority = T_PRIO + 1,
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulOverruningWorkload,
-        .xPeriod = PERIOD,
-        .xDeadline = 5,
+        .pvTaskCode = vFibonacciTask,
+        .pvParameters = (void*)&ulPayloadHeavy,
+        .xPeriod = 100,
+        .xDeadline = 100,
         .xPhase = 0,
-        .ePolicy = KILL,
+        .ePolicy = CATCH_UP,
         .cIsPeriodic = 1
     },
-	{
-        .pcName = "T3",
+    {
+        .pcName = "T_Extreme",
         .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = PERIOD,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
-        .cIsPeriodic = 1
-    },
-	{
-        .pcName = "T4",
-        .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = PERIOD,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
-        .cIsPeriodic = 1
-    },
-	{
-        .pcName = "T5",
-        .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = PERIOD,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
-        .cIsPeriodic = 1
-    },
-	{
-        .pcName = "T6",
-        .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = 9,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
-		.cIsPeriodic = 1
-    },
-	{
-        .pcName = "T7",
-        .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = 9,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
-        .cIsPeriodic = 1
-    },
-	{
-        .pcName = "T8",
-        .uxStackDepth = 256,
-        .uxPriority = P_PRIO, // Priorità minima (vittima)
-        .pvTaskCode = vDummyTask,
-        .pvParameters = (void*)&ulIgnoredWorkload,
-        .xPeriod = PERIOD,     // Scatta ogni 10 ms
-        .xDeadline = 9,   // Deadline immediata
-        .xPhase = 0,       // Tutti sincronizzati a Phase=0
-        .ePolicy = KILL,    // Massimo overhead di gestione
+        .uxPriority = T_PRIO,
+        .pvTaskCode = vFibonacciTask,
+        .pvParameters = (void*)&ulPayloadExtreme,
+        .xPeriod = 200,
+        .xDeadline = 200,
+        .xPhase = 0,
+        .ePolicy = SKIP,
         .cIsPeriodic = 1
     }
 };
@@ -125,69 +71,35 @@ int main(int argc, char **argv){
     (void) argc;
     (void) argv;
 
-	vTraceInit();
-	vUART_Init();
+    vTraceInit();
+    vUART_Init();
 
     if( xInitScheduler(xUserTasksConfig, sizeof(xUserTasksConfig) / sizeof(TaskConfig_t)) == pdTRUE )
     {
-		/* COMMENT OR UNCOMMENT FOR PROBING */
-        //xTaskCreate(vOverheadProbeTask, "Probe", 228, NULL, PTL_MIN_PRIORITY, NULL);
-        vUART_PutString( "---TASK SUCCESSFULLY CREATED ---\n");
-
+        vUART_PutString( "--- TASKS SUCCESSFULLY CREATED ---\n");
         vTaskStartScheduler();
     }
     else
     {
         vUART_PutString( "Some error occurred. Reset the CPU for cleaning the RAM\n" );
-        //if heap_1.c is used, then resources cannot be freed
-        //vReleaseResources(  sizeof(xUserTasksConfig) / sizeof(TaskConfig_t) );
         return 1;
     }
 }
 
-void vDummyTask(void *pvParameters) {
-	uint32_t  workload = *(uint32_t*)pvParameters;
-	/*
-	*  Let the argument being > TaskPeriod for triggering POLICIES
-	*  Otherwhise comment the task Delay
-	*/
-	//vTaskDelay(pdMS_TO_TICKS(2 * PERIOD));
-	for (volatile uint32_t i = 0; i < workload; i++) {
-        __asm volatile ("nop");
+/* 
+ * Real workload that consumes CPU calculating the n-th Fibonacci number.
+ * Using volatile to prevent compiler optimizations from skipping the loop.
+ */
+void vFibonacciTask(void *pvParameters) {
+    uint32_t n = *(uint32_t*)pvParameters;
+    
+    volatile uint32_t a = 0;
+    volatile uint32_t b = 1;
+    volatile uint32_t c = 0;
+    
+    for (uint32_t i = 2; i <= n; i++) {
+        c = a + b;
+        a = b;
+        b = c;
     }
-}
-
-
-void vOverheadProbeTask(void *pvParameters) {
-    ( void ) pvParameters;
-    TickType_t xStart, xEnd, xElapsed;
-    const uint32_t ulTargetMs = 10000;
-    char buf[128];
-
-    vUART_PutString( "[vOverheadProbeTas] --- STARTING OVERHEAD MEASUREMENT ---\n\n" );
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    xStart = xTaskGetTickCount();
-
-    volatile uint32_t i = ulTargetMs * LOOPS_PER_MS;
-    while(i > 0) { __asm volatile ("nop"); i--; }
-
-	vTaskSuspendAll();
-
-    xEnd = xTaskGetTickCount();
-
-    xElapsed = xEnd - xStart;
-
-    uint32_t ulOverheadMs = xElapsed - ulTargetMs;
-    uint32_t ulTotalPercentx100 = (ulOverheadMs * 10000) / ulTargetMs;
-
-    uint32_t ulPercentInt = ulTotalPercentx100 / 100;
-    uint32_t ulPercentDec = ulTotalPercentx100 % 100;
-
-    sprintf(buf, "Target: %lums | Real: %lu ms | OH: %lu ms (%lu.%02lu%%)\n",
-                ulTargetMs, xElapsed, ulOverheadMs, ulPercentInt, ulPercentDec);
-
-    vUART_PutString( buf );
-
-    vTaskSuspend(NULL);
 }
