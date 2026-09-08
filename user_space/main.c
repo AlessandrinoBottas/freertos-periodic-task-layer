@@ -11,30 +11,17 @@
 void vBusyDelayTask(void *pvParameters);
 
 /* Carichi di lavoro (durata dell'esecuzione in millisecondi) */
-static uint32_t ulPayloadLight   = 5;   // 5 ms
-static uint32_t ulPayloadMedium  = 15;  // 15 ms
-static uint32_t ulPayloadHeavy   = 40;  // 40 ms
-static uint32_t ulPayloadExtreme = 80;  // 80 ms
+static uint32_t ulPayloadP1   = 10;  // 10 ms
+static uint32_t ulPayloadP2_1 = 20;  // 20 ms
+static uint32_t ulPayloadP2_2 = 80;  // 80 ms
 
 static TaskConfig_t xUserTasksConfig[] = {
     {
-        .pcName = "T_Light",
+        .pcName = "P1",
         .uxStackDepth = 256,
-        .uxPriority = T_PRIO + 3,
+        .uxPriority = T_PRIO + 2,   // Alta priorità
         .pvTaskCode = vBusyDelayTask,
-        .pvParameters = (void*)&ulPayloadLight,
-        .xPeriod = 20,
-        .xDeadline = 20,
-        .xPhase = 0,
-        .ePolicy = KILL,
-        .cIsPeriodic = 1
-    },
-    {
-        .pcName = "T_Medium",
-        .uxStackDepth = 256,
-        .uxPriority = T_PRIO + 2,
-        .pvTaskCode = vBusyDelayTask,
-        .pvParameters = (void*)&ulPayloadMedium,
+        .pvParameters = (void*)&ulPayloadP1,
         .xPeriod = 50,
         .xDeadline = 50,
         .xPhase = 0,
@@ -42,27 +29,27 @@ static TaskConfig_t xUserTasksConfig[] = {
         .cIsPeriodic = 1
     },
     {
-        .pcName = "T_Heavy",
+        .pcName = "P2.1",
         .uxStackDepth = 256,
-        .uxPriority = T_PRIO + 1,
+        .uxPriority = T_PRIO + 1,   // Priorità media (stessa di P2.2)
         .pvTaskCode = vBusyDelayTask,
-        .pvParameters = (void*)&ulPayloadHeavy,
+        .pvParameters = (void*)&ulPayloadP2_1,
         .xPeriod = 100,
         .xDeadline = 100,
         .xPhase = 0,
-        .ePolicy = CATCH_UP,
+        .ePolicy = KILL,
         .cIsPeriodic = 1
     },
     {
-        .pcName = "T_Extreme",
+        .pcName = "P2.2",
         .uxStackDepth = 256,
-        .uxPriority = T_PRIO,
+        .uxPriority = T_PRIO + 1,   // Priorità media (stessa di P2.1)
         .pvTaskCode = vBusyDelayTask,
-        .pvParameters = (void*)&ulPayloadExtreme,
-        .xPeriod = 200,
-        .xDeadline = 200,
+        .pvParameters = (void*)&ulPayloadP2_2,
+        .xPeriod = 100,
+        .xDeadline = 100,
         .xPhase = 0,
-        .ePolicy = SKIP,
+        .ePolicy = KILL,            // Sicuramente andrà in Overrun (Kill)
         .cIsPeriodic = 1
     }
 };
