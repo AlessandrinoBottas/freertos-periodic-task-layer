@@ -13,7 +13,24 @@ This project implements a Priority-Based Scheduler on FreeRTOS that supports per
 ---
 ## 0. Usage
 
-### 0.1 Configure Tasks
+### 0.1 Clone and Setup
+
+To clone the repository and automatically initialize the FreeRTOS submodule, use the `--recursive` flag:
+
+```bash
+git clone --recursive https://github.com/AlessandrinoBottas/freertos-periodic-task-layer.git
+cd freertos-periodic-task-layer
+```
+
+If you have already cloned the repository without the submodule, you can fetch it by running:
+
+```bash
+git submodule update --init --recursive
+```
+
+---
+
+### 0.2 Configure Tasks
 
 Edit the task configuration array directly in the source code:
 
@@ -41,7 +58,7 @@ static TaskConfig_t xUserTasksConfig[] = {
 
 ---
 
-### 0.2 Compile
+### 0.3 Compile
 
     make clean && make all
 
@@ -49,7 +66,7 @@ This compiles the project.
 
 ---
 
-### 0.2 Run on QEMU
+### 0.4 Run on QEMU
 
     make qemu_start
 
