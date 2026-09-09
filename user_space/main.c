@@ -74,15 +74,10 @@ int main(int argc, char **argv){
 }
 
 /* 
- * Simulazione reale di carico sulla CPU.
- * Sostituisce i calcoli pesanti con un busy-wait basato sui tick,
- * consumando cicli macchina in modo misurabile e prevedibile.
+ * Task che simula un workload semplicemente andando in sleep
+ * usando vTaskDelay in base al parametro passato in ingresso.
  */
 void vBusyDelayTask(void *pvParameters) {
     uint32_t duration_ms = *(uint32_t*)pvParameters;
-    TickType_t xStart = xTaskGetTickCount();
-    
-    while ((xTaskGetTickCount() - xStart) < pdMS_TO_TICKS(duration_ms)) {
-        __asm volatile ("nop");
-    }
+    vTaskDelay(pdMS_TO_TICKS(duration_ms));
 }
