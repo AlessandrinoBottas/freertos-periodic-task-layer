@@ -8,7 +8,6 @@ This project implements a Priority-Based Scheduler on FreeRTOS that supports per
 2. [Periodic Task Layer](#2-periodic-task-layer)
 3. [Memory Management](#3-memory-management)
 4. [Empirical Overhead](#4-empirical-overhead)
-5. [Logs](#5-logs)
 
 ---
 ## 0. Usage
@@ -295,31 +294,6 @@ So it clear that this empirical method which logic is based on loops and counter
 For future development, adding special hooks connected directly to the hardware timer will allow us to count the exact clock cycles used by each software operation. This will overcome the resolution limits of the system tick.
 
 **Note:** The scheduling logic and fault management models remain mathematically correct and valid. This hardware-level change would only be implemented to make the measurements more precise.
-
-
-## 5. Logs
-This module implements a deterministic, queue-based event logging subsystem for FreeRTOS, coupled with a bare-metal UART driver. It is designed to track task execution, overruns, and deadline misses while adhering to strict real-time and static-memory constraints.  
-
-### 5.1 Trace Event Architecture
-
-Every log message uses a standardized `TraceEvent_t` structure to ensure a uniform memory footprint in the queue. This struct captures the exact timing (`xTimestamp`), the executing task name (`pcTaskName`), job misses (`usJobMiss`), and deadline misses (`ucDeadlineMiss`). System behavior is explicitly categorized by the `eTraceEventType_t` enumeration, which defines standard scheduling milestones and overrun mitigation states (e.g., Kill, Skip, Catch-Up).
-
-### 5.2 UART Driver Subsystem
-
-To eliminate the overhead of external libraries, output is routed through a custom, bare-metal UART driver. Configured with a fixed Baud Rate divider (`UART0_BAUDDIV = 16UL`), transmission relies on deterministic, busy-wait polling. By masking the` UART_STATE_TXBF` register, the software guarantees the hardware buffer is clear before transmitting the next byte, ensuring reliable output without requiring interrupts.
-
-### 5.3 Logger Layer (Producer-Consumer)
-
-Logging directly to a peripheral from high-priority tasks creates unacceptable real-time latency. This architecture decouples the process: producers (tasks or ISRs) populate an event struct and push it to `xTraceQueue` with zero block time. This guarantees mission-critical execution is never delayed. A low-priority consumer (`vTracePrinterTask`) pends on this queue, waking only to format and transmit the buffered data via UART.
-
-### 5.4 Static Memory Management
-
-Aligning with the system's static allocation paradigm, the logger bypasses dynamic heap allocation. The event queue is provisioned at compile time for exactly 256 events (`TRACE_BUFFER_SIZE`) using `xQueueCreateStatic`. A hard system assertion (`configASSERT`) verifies queue initialization to guarantee kernel safety before any task runs. 
-
-### 5.5 Deterministic Formatting
-
-Standard C library formatting routines (like `printf`) are bloated and non-deterministic. The logger bypasses them entirely, utilizing custom, lightweight static functions (`prvUIntToString`, `prvStrCpy`, and enum-to-string mappers). This guarantees predictable execution times and clean, aligned terminal output without burning unnecessary stack space.
-
 
 ## References
 * **[1] R. Racu, L. Li, R. Henia, A. Hamann, and R. Ernst**, "Improved response time analysis of tasks scheduled under preemptive Round-Robin," in *Proceedings of the 5th IEEE/ACM/IFIP international conference on Hardware/software codesign and system synthesis (CODES+ISSS '07)*, Salzburg, Austria, 2007, pp. 179–184.
